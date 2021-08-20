@@ -3,5 +3,5 @@ add option to increse stock number for existing product. TICK
 reduce the stock product value while billing. TICK
 check remaining stock while creating bill. TICK
 
-use except specifically at the start.
-create alert for stock.
+use except specifically at the start. TICK
+create alert for stock. TICK

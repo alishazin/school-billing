@@ -878,6 +878,29 @@ def add_stocks_to_database(id, value):
     print(f"\nProduct Stock Updated to '{exisitingStock + value}' Successfully.")
     go_back_to_home_page()
 
+def show_stock_alert():
+    """ Function to see if there is any product running out of stock comparing to the value inputted """
+
+    try:
+        limitValue = float(input('\nEnter the Stock Limit ( To Check if Any Product is Running Out of Stock ) : '))
+    except:
+        print('\nError: Stock Limit should be a numeric value')
+        show_stock_alert()
+    else:
+        if limitValue < 0:
+            print('\nError: Stock Limit should be a positive number')
+            show_stock_alert()
+        else:
+            DB_CURSOR.execute(f"SELECT id,name,stock FROM productdetails WHERE stock <= '{limitValue}'")
+            result = DB_CURSOR.fetchall()
+
+            stockAlertTable = PrettyTable(['ID','Product Name','Stock'])
+            for i in result:
+                stockAlertTable.add_row([i[0],i[1],i[2]])
+            print(f'\n--Stock Alerts !--\n\n{stockAlertTable}')
+
+            go_back_to_home_page()
+
 def most_sold_product_plot(data):
     """ plotting the graph based on most sold product, using `matplotlib` """
 
@@ -919,7 +942,7 @@ def graph_page():
 def home_page():
     """ Serves as a Home Page. """
 
-    print("\n---Home Page---\n\n1. Enter bill.\n2. Add Products.\n3. Add Stocks\n4. Remove Products.\n5. Edit the Price of a Products.\n6. Show older bills.\n7. Show all the product details (in terminal).\n8. Show all the product details (in csv).\n9. Show all the backup product details (in terminal).\n10. Show all the backup product details (in csv).\n11. Plot Graphs.\n12. Exit.")
+    print("\n---Home Page---\n\n1. Enter bill.\n2. Add Products.\n3. Add Stocks\n4. Remove Products.\n5. Edit the Price of a Products.\n6. Show older bills.\n7. Show all the product details (in terminal).\n8. Show all the product details (in csv).\n9. Show all the backup product details (in terminal).\n10. Show all the backup product details (in csv).\n11. Show Stock Alerts\n12. Plot Graphs.\n13. Exit.")
     option = input('\nEnter a Valid Option : ')
 
     if option == '1':
@@ -943,8 +966,10 @@ def home_page():
     elif option == '10':
         show_backup_product_details_in_csv()
     elif option == '11':
-        graph_page()
+        show_stock_alert()
     elif option == '12':
+        graph_page()
+    elif option == '13':
         DB_OBJECT.close()
         print('\nExiting..')
     else:
@@ -954,4 +979,3 @@ def home_page():
 username_input = input('\nUsername (MySQL localhost) : ')
 password_input = input('\nPassword (MySQL localhost) : ')
 log_in(username_input, password_input)
-
