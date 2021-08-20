@@ -1,1 +1,0 @@
-Dont make any changes to the files in this directory. Renaming, replacing or deleting them can crash the application.
