@@ -5,3 +5,10 @@ check remaining stock while creating bill. TICK
 
 use except specifically at the start. TICK
 create alert for stock. TICK
+
+create Customer Table.
+option to view cusdetails Table.
+option to search for a specific customer details.
+ask ph. no before bill
+if new ph. no, then ask for the name and location(optional) to add to cusdetails.
+ask for price paid after bill, so can add or minus from `remaining` column

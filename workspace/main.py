@@ -63,33 +63,39 @@ def check_if_new_user():
         DB_CURSOR.execute('USE billing_software')
         DB_CURSOR.execute("""CREATE TABLE productdetails (
             id INT PRIMARY KEY,
-            name VARCHAR(30) UNIQUE,
-            unit VARCHAR(6),
-            price float,
-            stock float,
+            name VARCHAR(30) UNIQUE NOT NULL,
+            unit VARCHAR(6) NOT NULL,
+            price float NOT NULL,
+            stock float NOT NULL,
             CONSTRAINT check_unit CHECK (unit = 'packet' OR unit = 'kg')
         )""")
         DB_CURSOR.execute("""CREATE TABLE backupproductdetails (
             id INT PRIMARY KEY,
-            name VARCHAR(30),
-            unit VARCHAR(6),
-            price float
+            name VARCHAR(30) NOT NULL,
+            unit VARCHAR(6) NOT NULL,
+            price float NOT NULL
         )""")
         DB_CURSOR.execute("""CREATE TABLE billdatetracker (
             bill_id INT PRIMARY KEY,
-            date DATE
-        )""") # fk = foreign key
+            date DATE NOT NULL
+        )""") 
         DB_CURSOR.execute("""CREATE TABLE bill (
-            bill_id INT,
-            product_id INT,
-            quantity float,
-            price float,
-            CONSTRAINT fk_bill_id FOREIGN KEY (bill_id) REFERENCES billdatetracker(bill_id)
+            bill_id INT NOT NULL,
+            product_id INT NOT NULL,
+            quantity float NOT NULL,
+            price float NOT NULL,
+            FOREIGN KEY (bill_id) REFERENCES billdatetracker(bill_id)
         )""")
         DB_CURSOR.execute("""CREATE TABLE pricetracker (
-            product_id INT,
-            price float,
-            date DATE
+            product_id INT NOT NULL,
+            price float NOT NULL,
+            date DATE NOT NULL
+        )""")
+        DB_CURSOR.execute("""CREATE TABLE customerdetails (
+            contact_no INT PRIMARY KEY,
+            name VARCHAR(30) NOT NULL,
+            location VARCHAR(50) NULL,
+            remaining_money INT NULL
         )""")
         DB_OBJECT.commit()
         create_readme_file()
