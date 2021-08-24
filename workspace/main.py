@@ -75,16 +75,17 @@ def check_if_new_user():
             unit VARCHAR(6) NOT NULL,
             price float NOT NULL
         )""")
-        DB_CURSOR.execute("""CREATE TABLE billdatetracker (
+        DB_CURSOR.execute("""CREATE TABLE billdateandcustomertracker (
             bill_id INT PRIMARY KEY,
-            date DATE NOT NULL
+            date DATE NOT NULL,
+            cus_id INT NOT NULL
         )""") 
         DB_CURSOR.execute("""CREATE TABLE bill (
             bill_id INT NOT NULL,
             product_id INT NOT NULL,
             quantity float NOT NULL,
             price float NOT NULL,
-            FOREIGN KEY (bill_id) REFERENCES billdatetracker(bill_id)
+            FOREIGN KEY (bill_id) REFERENCES billdateandcustomertracker(bill_id)
         )""")
         DB_CURSOR.execute("""CREATE TABLE pricetracker (
             product_id INT NOT NULL,
@@ -92,10 +93,11 @@ def check_if_new_user():
             date DATE NOT NULL
         )""")
         DB_CURSOR.execute("""CREATE TABLE customerdetails (
-            contact_no INT PRIMARY KEY,
+            cus_id INT AUTO_INCREMENT PRIMARY KEY,
+            contact_no VARCHAR(15) UNIQUE,
             name VARCHAR(30) NOT NULL,
             location VARCHAR(50) NULL,
-            remaining_money INT NULL
+            remaining_money INT NOT NULL DEFAULT '0'
         )""")
         DB_OBJECT.commit()
         create_readme_file()
@@ -378,6 +380,100 @@ def show_backup_product_details_in_terminal():
     print(f'\n--Backup Product Details--\n\n{productTable}')
     go_back_to_home_page()
 
+def enter_cus_details():
+    """ User Interdace for entering customer details for the bill. If new customer, stored in a GLOBAL variable(dictionary). """
+
+    while True:
+        conNo = input("\nEnter the Contact Number of the Customer : ")
+        if len(conNo) > 15:
+            print('\nError: Contact Number should be less than 15')
+            continue
+        elif conNo.isnumeric():
+            if check_if_existing_customer(conNo):
+                conNo2, cusName, cusLoc, remainingMoney = get_customer_details_from_con_no(conNo)
+            else:
+                conNo2, cusName, cusLoc, remainingMoney = add_new_customer(conNo)
+            break
+        else:
+            print("\nError: Invalid Contact Number")
+            continue
+
+    edit_global_var_customer_details(conNo2, cusName, cusLoc, remainingMoney)
+    enter_bill()
+
+def edit_global_var_customer_details(number, name, location, remaining):
+    """ Function to initialize the global variable `CUSTOMER_DETAILS` """
+
+    global CUSTOMER_DETAILS
+    CUSTOMER_DETAILS = {
+        'number' : number,
+        'name' : name,
+        'location' : location,
+        'remaining' : remaining
+    }
+
+    print(CUSTOMER_DETAILS)
+
+def get_cus_id_from_con_no(number):
+    """ Function to return cus_id after providing Contact Number """
+
+    DB_CURSOR.execute(f"SELECT cus_id FROM customerdetails WHERE contact_no = '{number}'")
+    result = DB_CURSOR.fetchall()
+    return result[0][0]
+
+def get_customer_details_from_cus_id(cusId):
+    """ Function to return customer details after providing cus_id """
+
+    DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE cus_id = '{cusId}'")
+    result = DB_CURSOR.fetchall()
+    return result[0][1], result[0][2], result[0][3], result[0][4]
+
+def get_customer_details_from_con_no(number):
+    """ Function to return customer details after providing Contact Number """
+
+    DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE contact_no = '{number}'")
+    result = DB_CURSOR.fetchall()
+    return result[0][1], result[0][2], result[0][3], result[0][4]
+
+def add_new_customer(conNo):
+    """ User Interface to add a new customer. """
+
+    print(f"\nUser with Contact No: {conNo} doesn't exist. So, we will add a new one. ")
+
+    while True:
+        cusName = input("\nEnter the Customer Name : ")
+        if len(cusName.strip()) == 0:
+            print("\nError: Invalid Customer Name")
+            continue
+        elif len(cusName) > 30:
+            print('\nError: Customer Name should be less than 30 characters')
+        else:
+            cusLoc = input("\nEnter the Customer Location (optional) : ")
+            if len(cusLoc.strip()) == 0:
+                cusLoc = None
+            elif len(cusLoc) > 40:
+                print('\nError: Customer Location should be less than 40 characters')
+                continue
+            break
+
+    if cusLoc == None:
+        DB_CURSOR.execute(f"INSERT INTO customerdetails(contact_no, name) VALUES('{int(conNo)}','{cusName}')")
+    else:
+        DB_CURSOR.execute(f"INSERT INTO customerdetails(contact_no, name, location) VALUES('{int(conNo)}','{cusName}','{cusLoc}')")
+    DB_OBJECT.commit()
+
+    return conNo, cusName, cusLoc, 0
+
+def check_if_existing_customer(number):
+    """ Function to check whether a customer exist with the `passed` contact number """
+
+    DB_CURSOR.execute(f"SELECT name FROM customerdetails WHERE contact_no = '{number}'")
+    result = DB_CURSOR.fetchall()
+    if len(result) == 0:
+        return False
+    else:
+        return True
+
 def enter_bill():
     """ User Interface for entering bill along with a little error catching """
 
@@ -500,8 +596,8 @@ def add_bill_to_database(bill_dict):
     reduce_stock_product(billWithProductId)
     latestID = get_latest_bill_id()
 
-    # Inserting to the table `billdatetracker`
-    DB_CURSOR.execute(f"INSERT INTO billdatetracker VALUES({int(latestID + 1)},current_date())")
+    # Inserting to the table `billdateandcustomertracker`
+    DB_CURSOR.execute(f"INSERT INTO billdateandcustomertracker VALUES({int(latestID + 1)},current_date(),'{get_cus_id_from_con_no(CUSTOMER_DETAILS['number'])}')")
     DB_OBJECT.commit()
 
     # Inserting to the table `bill`
@@ -573,7 +669,7 @@ def show_bill_in_txt_file(billTable, billId, billTotal):
     # chance of error if the file `bill.txt` is open
     try:
         with open('bill.txt','w') as file:
-            file.write(f"Bill ID : {billId}\nDate : {get_date_from_bill_id(billId)}\n\n{str(billTable)}\n\nTotal Cost ----------> {float(billTotal)}")
+            file.write(f"Bill ID : {billId}\nDate : {get_date_from_bill_id(billId)}\nContact No : {CUSTOMER_DETAILS['number']}\nCustomer Name : {CUSTOMER_DETAILS['name']}\n\n{str(billTable)}\n\nTotal Cost ----------> {float(billTotal)}")
         os.popen('bill.txt')
         print('\nBill Generated Successfully')
 
@@ -581,7 +677,7 @@ def show_bill_in_txt_file(billTable, billId, billTotal):
         print(f'\nError: {error}')
 
 def get_date_from_bill_id(billId):
-    DB_CURSOR.execute(f"SELECT date FROM billdatetracker WHERE bill_id = {billId}")
+    DB_CURSOR.execute(f"SELECT date FROM billdateandcustomertracker WHERE bill_id = {billId}")
     return str((DB_CURSOR.fetchall())[0][0])
 
 def get_product_price_from_id(id):
@@ -642,8 +738,18 @@ def view_latest_bill():
         generate_bill_with_price(billWithProductId ,latestBillID)
         go_back_to_bill_view()
 
+def get_cus_id_from_bill_id(billId):
+    """ Function to get cus_id from bill_id from table `billdateandcustomertracker` """
+
+    DB_CURSOR.execute(f"SELECT cus_id FROM billdateandcustomertracker WHERE bill_id = '{billId}'")
+    result = DB_CURSOR.fetchall()
+    return result[0][0]
+
 def get_bill_using_bill_id(billId):
     """ Getting the bill details from `bill` table according to the recieved `Bill ID` """
+
+    cusNumber, cusName, cusLocation, cusRemaining = get_customer_details_from_cus_id(get_cus_id_from_bill_id(billId))
+    edit_global_var_customer_details(cusNumber, cusName, cusLocation, cusRemaining)
 
     DB_CURSOR.execute(f"SELECT product_id,quantity,price FROM bill WHERE bill_id = {billId}")
     result = DB_CURSOR.fetchall()
@@ -952,7 +1058,7 @@ def home_page():
     option = input('\nEnter a Valid Option : ')
 
     if option == '1':
-        enter_bill()
+        enter_cus_details()
     elif option == '2':
         enter_product_details()
     elif option == '3':
