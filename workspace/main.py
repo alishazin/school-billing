@@ -97,7 +97,7 @@ def check_if_new_user():
             contact_no VARCHAR(15) UNIQUE,
             name VARCHAR(30) NOT NULL,
             location VARCHAR(50) NULL,
-            remaining_money INT NOT NULL DEFAULT '0'
+            remaining_money float NOT NULL DEFAULT '0'
         )""")
         DB_OBJECT.commit()
         create_readme_file()
@@ -306,8 +306,7 @@ def add_details_to_backup(id):
     unit = result[0][2]
     price = result[0][3]
     DB_CURSOR.execute(f"INSERT INTO backupproductdetails VALUES({id},'{str(name)}','{str(unit)}',{float(price)})")
-    DB_OBJECT.commit()
-    
+    DB_OBJECT.commit() 
 
 def check_for_delete(id):
     """ 
@@ -609,7 +608,7 @@ def add_bill_to_database(bill_dict):
     with open('bill_count.bin','wb') as file:
         pickle.dump(int(latestID + 1), file)
 
-    generate_bill_with_price(billWithProductId, int(latestID + 1))
+    generate_bill_with_price(billWithProductId, int(latestID + 1), 'new')
     go_back_to_home_page()
 
 def reduce_stock_product(bill):
@@ -622,7 +621,7 @@ def reduce_stock_product(bill):
 
     DB_OBJECT.commit()
 
-def generate_bill_with_price(bill, billId):
+def generate_bill_with_price(bill, billId, status = 'old'):
     """ Recieving the bill in the form of `list` as `bill` and returning a `list` with all the values needed to print the bill onto a `.txt` file """
 
     billToPrint = []
@@ -635,9 +634,9 @@ def generate_bill_with_price(bill, billId):
         tempList.append(float(i[2] * i[1]))
         billToPrint.append(tempList)
 
-    create_bill_as_table(billToPrint, billId)
+    create_bill_as_table(billToPrint, billId, status)
 
-def create_bill_as_table(billList, billID):
+def create_bill_as_table(billList, billID, status):
     """ Recieving a finished bill in the `list` datatype and creating a proper table using `prettytable` to view the bill """
     
     billTable = PrettyTable(['Product ID','Product Name','Price Per Unit','Quantity','Total'])
@@ -646,7 +645,38 @@ def create_bill_as_table(billList, billID):
         billTotal += float(i[4])
         billTable.add_row([i[0],check_backup_or_not(i[0],i[1]),i[2],i[3],i[4]])
 
+    if status == 'new':
+        while True:
+            moneyPaid = input(f"\nTotal Cost of the current purchase = {billTotal}.\nDue Amount including this bill for the Customer '{CUSTOMER_DETAILS['name']}' = {float(CUSTOMER_DETAILS['remaining']) + billTotal}.\nEnter the money that customer had paid (Enter Nothing if '{billTotal}' is paid) : ")
+            if len(moneyPaid.strip()) == 0:
+                moneyLeft = (float(CUSTOMER_DETAILS['remaining']) + billTotal) - float(billTotal)
+                DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{moneyLeft}' WHERE contact_no = '{CUSTOMER_DETAILS['number']}'")
+                DB_OBJECT.commit()
+                break
+            elif check_if_money(moneyPaid) == False:
+                print("\nError: Invalid Input.")
+                continue
+            else:
+                moneyLeft = (float(CUSTOMER_DETAILS['remaining']) + billTotal) - float(moneyPaid)
+                if moneyLeft >= 0:             
+                    DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{moneyLeft}' WHERE contact_no = '{CUSTOMER_DETAILS['number']}'")
+                    DB_OBJECT.commit()
+                    break
+                elif moneyLeft < 0:
+                    print("\nError: Money Paid by the Customer has Exceeded the Due Money.")
+                    continue
+
     show_bill_in_txt_file(billTable, billID, billTotal)
+
+def check_if_money(number):
+    """ Function return True if argument is a proper number. else return False """
+
+    try:
+        float(number)
+    except:
+        return False
+    else:
+        return True
 
 def check_backup_or_not(id,name):
     """ Function to check whether the recieved `product_id` is deleted or not """

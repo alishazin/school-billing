@@ -11,4 +11,4 @@ option to view cusdetails Table.
 option to search for a specific customer details.
 ask ph. no before bill. TICK
 if new ph. no, then ask for the name and location(optional) to add to cusdetails. TICK
-ask for price paid after bill, so can add or minus from `remaining` column
+ask for price paid after bill, so can add or minus from `remaining` column. TICK
