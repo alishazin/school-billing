@@ -7,8 +7,9 @@ use except specifically at the start. TICK
 create alert for stock. TICK
 
 create Customer Table. TICK
-option to view cusdetails Table.
-option to search for a specific customer details.
+option to view cusdetails Table. TICK
+option to search for a specific customer details. TICK
 ask ph. no before bill. TICK
 if new ph. no, then ask for the name and location(optional) to add to cusdetails. TICK
 ask for price paid after bill, so can add or minus from `remaining` column. TICK
+option to reduce from the `remaining` column manually.

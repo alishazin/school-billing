@@ -411,8 +411,6 @@ def edit_global_var_customer_details(number, name, location, remaining):
         'remaining' : remaining
     }
 
-    print(CUSTOMER_DETAILS)
-
 def get_cus_id_from_con_no(number):
     """ Function to return cus_id after providing Contact Number """
 
@@ -420,19 +418,33 @@ def get_cus_id_from_con_no(number):
     result = DB_CURSOR.fetchall()
     return result[0][0]
 
-def get_customer_details_from_cus_id(cusId):
+def get_customer_details_from_cus_id(cusId, instance = 0):
     """ Function to return customer details after providing cus_id """
 
-    DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE cus_id = '{cusId}'")
+    DB_CURSOR.execute(f"SET @id = {cusId}")
+    DB_CURSOR.execute("SELECT * FROM customerdetails WHERE cus_id = @id")
     result = DB_CURSOR.fetchall()
-    return result[0][1], result[0][2], result[0][3], result[0][4]
+    if instance == 1:
+        if len(result) == 0:
+            return ['', '', '', '', '']
+        else:
+            return [result[0][0], result[0][1], result[0][2], result[0][3], result[0][4]]
+    else:
+        return result[0][1], result[0][2], result[0][3], result[0][4]
 
-def get_customer_details_from_con_no(number):
+def get_customer_details_from_con_no(number, instance = 0):
     """ Function to return customer details after providing Contact Number """
 
-    DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE contact_no = '{number}'")
+    DB_CURSOR.execute(f"SET @con_no = {number}")
+    DB_CURSOR.execute("SELECT * FROM customerdetails WHERE contact_no = @con_no")
     result = DB_CURSOR.fetchall()
-    return result[0][1], result[0][2], result[0][3], result[0][4]
+    if instance == 1:
+        if len(result) == 0:
+            return ['', '', '', '', '']
+        else:
+            return [result[0][0], result[0][1], result[0][2], result[0][3], result[0][4]]
+    else:
+        return result[0][1], result[0][2], result[0][3], result[0][4]
 
 def add_new_customer(conNo):
     """ User Interface to add a new customer. """
@@ -647,7 +659,7 @@ def create_bill_as_table(billList, billID, status):
 
     if status == 'new':
         while True:
-            moneyPaid = input(f"\nTotal Cost of the current purchase = {billTotal}.\nDue Amount including this bill for the Customer '{CUSTOMER_DETAILS['name']}' = {float(CUSTOMER_DETAILS['remaining']) + billTotal}.\nEnter the money that customer had paid (Enter Nothing if '{billTotal}' is paid) : ")
+            moneyPaid = input(f"\nTotal Cost of the Current Purchase = {billTotal}.\nDue Amount including this bill for the Customer '{CUSTOMER_DETAILS['name']}' = {float(CUSTOMER_DETAILS['remaining']) + billTotal}.\nEnter the money that customer had paid (Enter Nothing if '{billTotal}' is paid) : ")
             if len(moneyPaid.strip()) == 0:
                 moneyLeft = (float(CUSTOMER_DETAILS['remaining']) + billTotal) - float(billTotal)
                 DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{moneyLeft}' WHERE contact_no = '{CUSTOMER_DETAILS['number']}'")
@@ -880,6 +892,15 @@ def go_back_to_bill_view():
     input('\nPress Enter to go back to Bill View : ')
     bill_view_page()
 
+def go_back_to_customer_view():
+    """ 
+    Function to go back to customer view. `Note:` This function print less string so that user can have a look at the latest message (usually error message), 
+    especially if using a smaller screen 
+    """
+
+    input('\nPress Enter to go back to Customer View Page : ')
+    customer_view_page()
+
 def bill_view_page():
     """ Serves as a Bill View Page. """
 
@@ -1065,6 +1086,63 @@ def most_sold_product_plot(data):
 
     go_back_to_graph_page()
 
+def search_customer_using_con_no():
+    """ Function to search for customer details using Customer Conatact Number """
+
+    conNo = input("\nEnter the Contact Number To Search For : ")
+
+    if len(conNo.strip()) == 0:
+        print("\nError: Invalid Input")
+        search_customer_using_con_no()
+    else:
+        customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
+        customerTable.add_row(get_customer_details_from_con_no(conNo, 1))
+        print(f'\n{customerTable}')
+        go_back_to_customer_view()
+
+def search_customer_using_name():
+    """ Function to search for customer details using Customer Name """
+
+    name = input("\nEnter the Name To Search For : ")
+
+    if len(name.strip()) == 0:
+        print("\nError: Invalid Input")
+        search_customer_using_name()
+    else:
+        likeOrExact = input("\nEnter 0 for EXACT search, Enter 1 for LIKE(starting with) search or Enter 2 for LIKE(anywhere in the name) search : ")
+
+        if likeOrExact.strip() == '0':
+            DB_CURSOR.execute(f"SET @cus_name = '{name}'")
+            DB_CURSOR.execute("SELECT * FROM customerdetails WHERE BINARY(name) = @cus_name")
+            result = DB_CURSOR.fetchall()
+            customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
+            for i in result:
+                customerTable.add_row([i[0],i[1],i[2],i[3],i[4]])
+            print(f'\n{customerTable}')
+            go_back_to_customer_view()
+
+        elif likeOrExact.strip() == '1':
+            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE name LIKE '{name}%'")
+            result = DB_CURSOR.fetchall()
+            customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
+            for i in result:
+                customerTable.add_row([i[0],i[1],i[2],i[3],i[4]])
+            print(f'\n{customerTable}')
+            go_back_to_customer_view()
+
+        elif likeOrExact.strip() == '2':
+            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE name LIKE '%{name}%'")
+            result = DB_CURSOR.fetchall()
+            customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
+            for i in result:
+                customerTable.add_row([i[0],i[1],i[2],i[3],i[4]])
+            print(f'\n{customerTable}')
+            go_back_to_customer_view()
+
+        else:
+            print("\nError: Invalid Input")
+            search_customer_using_name()
+
 def graph_page():
     """ Serves as a Graph page """
 
@@ -1081,10 +1159,26 @@ def graph_page():
         print('\nError: Invalid Option')
         bill_view_page()
 
+def customer_view_page():
+    """ Serves as a Customer View Page """
+
+    print("\n---Customer View Page---\n\n1. Search for a Customer Using Name.\n2. Search for a Customer Using Contact Number.\n3. Go Back to Home Page.")
+    option = input('\nEnter a Valid Option : ')
+
+    if option == '1':
+        search_customer_using_name()
+    elif option == '2':
+        search_customer_using_con_no()
+    elif option == '3':
+        home_page()
+    else:
+        print('\nError: Invalid Option')
+        customer_view_page()
+
 def home_page():
     """ Serves as a Home Page. """
 
-    print("\n---Home Page---\n\n1. Enter bill.\n2. Add Products.\n3. Add Stocks\n4. Remove Products.\n5. Edit the Price of a Products.\n6. Show older bills.\n7. Show all the product details (in terminal).\n8. Show all the product details (in csv).\n9. Show all the backup product details (in terminal).\n10. Show all the backup product details (in csv).\n11. Show Stock Alerts\n12. Plot Graphs.\n13. Exit.")
+    print("\n---Home Page---\n\n1. Enter bill.\n2. Add Products.\n3. Add Stocks\n4. Remove Products.\n5. Edit the Price of a Products.\n6. Show older bills.\n7. View Customer Details.\n8. Show all the product details (in terminal).\n9. Show all the product details (in csv).\n10. Show all the backup product details (in terminal).\n11. Show all the backup product details (in csv).\n12. Show Stock Alerts\n13. Plot Graphs.\n14. Exit.")
     option = input('\nEnter a Valid Option : ')
 
     if option == '1':
@@ -1100,18 +1194,20 @@ def home_page():
     elif option == '6':
         bill_view_page()
     elif option == '7':
-        show_product_details_in_terminal()
+        customer_view_page()
     elif option == '8':
-        show_product_details_in_csv()
+        show_product_details_in_terminal()
     elif option == '9':
-        show_backup_product_details_in_terminal()
+        show_product_details_in_csv()
     elif option == '10':
-        show_backup_product_details_in_csv()
+        show_backup_product_details_in_terminal()
     elif option == '11':
-        show_stock_alert()
+        show_backup_product_details_in_csv()
     elif option == '12':
-        graph_page()
+        show_stock_alert()
     elif option == '13':
+        graph_page()
+    elif option == '14':
         DB_OBJECT.close()
         print('\nExiting..')
     else:
