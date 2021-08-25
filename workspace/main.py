@@ -524,7 +524,7 @@ def enter_bill():
                         info = None
                         break 
             else:
-                print(f'\n{quantityCheck}')
+                print(quantityCheck)
                 continue
         else:
             print('\nError: Invalid Product name')
@@ -665,7 +665,7 @@ def create_bill_as_table(billList, billID, status):
                 DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{moneyLeft}' WHERE contact_no = '{CUSTOMER_DETAILS['number']}'")
                 DB_OBJECT.commit()
                 break
-            elif check_if_money(moneyPaid) == False:
+            elif check_if_money(moneyPaid) == False and moneyPaid >= 0:
                 print("\nError: Invalid Input.")
                 continue
             else:
@@ -1143,6 +1143,35 @@ def search_customer_using_name():
             print("\nError: Invalid Input")
             search_customer_using_name()
 
+def reduce_from_due_amount():
+    """ Function to reduce from `remaining_money` column manually without printing a bill """
+
+    conNo = input("\nEnter the Contact Number of the Customer to Reduce From : ")
+
+    if conNo.isnumeric():
+        cusDetails = get_customer_details_from_con_no(conNo, 1)
+        if cusDetails[4] == '':
+            print("\nError: Contact Number doesn't Exist")
+            reduce_from_due_amount()
+        else:
+            print(f"\nCustomer '{cusDetails[2]}' has a due Amount of '{cusDetails[4]}'")
+            reduceMoney = input("\nEnter the Amount that you Want to Reduce : ")
+            if check_if_money(reduceMoney) and float(reduceMoney) >= 0:
+                if float(reduceMoney) > float(cusDetails[4]):
+                    print("\nError: Customer has Exceeded the Due Amount")
+                    reduce_from_due_amount()
+                else:
+                    DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{float(cusDetails[4]) - float(reduceMoney)}' WHERE contact_no = '{cusDetails[1]}'")
+                    DB_OBJECT.commit()
+                    print(f"\nDue Amount is successfully Reduced to '{float(cusDetails[4]) - float(reduceMoney)}'")
+                    go_back_to_customer_view()
+            else:
+                print("\nError: Invalid Input")
+                reduce_from_due_amount()
+    else:
+        print("\nError: Invalid Input")
+        reduce_from_due_amount()
+
 def graph_page():
     """ Serves as a Graph page """
 
@@ -1162,7 +1191,7 @@ def graph_page():
 def customer_view_page():
     """ Serves as a Customer View Page """
 
-    print("\n---Customer View Page---\n\n1. Search for a Customer Using Name.\n2. Search for a Customer Using Contact Number.\n3. Go Back to Home Page.")
+    print("\n---Customer View Page---\n\n1. Search for a Customer Using Name.\n2. Search for a Customer Using Contact Number.\n3. Reduce from the Due Amount.\n4. Go Back to Home Page.")
     option = input('\nEnter a Valid Option : ')
 
     if option == '1':
@@ -1170,6 +1199,8 @@ def customer_view_page():
     elif option == '2':
         search_customer_using_con_no()
     elif option == '3':
+        reduce_from_due_amount()
+    elif option == '4':
         home_page()
     else:
         print('\nError: Invalid Option')
