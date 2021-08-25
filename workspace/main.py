@@ -729,15 +729,22 @@ def get_product_price_from_id(id):
     result = DB_CURSOR.fetchall()
     return float(result[0][0])
 
-def get_product_name_from_id(id):
+def get_product_name_from_id(id, instance = 0):
     """ Returns `name` of the product by recieving `product_id` """
 
+    backup = False
     DB_CURSOR.execute(f"SELECT name FROM productdetails WHERE id = '{id}'")
     result = DB_CURSOR.fetchall()
     if len(result) == 0:
         DB_CURSOR.execute(f"SELECT name FROM backupproductdetails WHERE id = '{id}'")
         result = DB_CURSOR.fetchall()
-    return str(result[0][0])
+        backup = True
+    else:
+        pass
+    if instance == 1 and backup == True:
+        return f"{result[0][0]}(Del)"
+    else:
+        return str(result[0][0])
 
 def get_latest_bill_id():
     """ Returns the latest `Bill ID` from the file `bill_count.bin` """
@@ -999,7 +1006,7 @@ def most_sold_product_sorting():
                 count += 1
             quantity_count_sorted = temp_dict
             del temp_dict
-
+        print(quantity_count_sorted)
         most_sold_product_plot(quantity_count_sorted)
 
 def add_stock_interface():
@@ -1070,7 +1077,7 @@ def most_sold_product_plot(data):
     x_axis = []
     y_axis = []
     for key, value in data.items():
-        x_axis.append(f'{get_product_name_from_id(int(key))}({key})')
+        x_axis.append(f'{get_product_name_from_id(int(key), 1)}({key})')
         y_axis.append(float(value))
 
     print('\nPlotting..')
