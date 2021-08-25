@@ -1006,8 +1006,20 @@ def most_sold_product_sorting():
                 count += 1
             quantity_count_sorted = temp_dict
             del temp_dict
-        print(quantity_count_sorted)
-        most_sold_product_plot(quantity_count_sorted)
+        
+        x_axis = []
+        y_axis = []
+        for key, value in quantity_count_sorted.items():
+            x_axis.append(f'{get_product_name_from_id(int(key), 1)}({key})')
+            y_axis.append(float(value))
+
+        plot_bar_graph(
+            'Most Sold Products (Top 5)',
+            'Product Name (ID)',
+            'No. of Products Sold',
+            x_axis,
+            y_axis
+        )  
 
 def add_stock_interface():
     """ Interface for adding stock to existing products """
@@ -1070,28 +1082,6 @@ def show_stock_alert():
             print(f'\n--Stock Alerts !--\n\n{stockAlertTable}')
 
             go_back_to_home_page()
-
-def most_sold_product_plot(data):
-    """ plotting the graph based on most sold product, using `matplotlib` """
-
-    x_axis = []
-    y_axis = []
-    for key, value in data.items():
-        x_axis.append(f'{get_product_name_from_id(int(key), 1)}({key})')
-        y_axis.append(float(value))
-
-    print('\nPlotting..')
-    colors = ['#3771EF','#DAB839','#DD602F','#CE2FDD','#2FDD8F']
-    plt.title('Most Sold Products (Top 5)', size='15', color='blue')
-    plt.xlabel('Product Name (ID)', color='green', size='12')
-    plt.ylabel('No. of Products Sold', color='green', size='12')
-    plt.bar(x_axis, y_axis, color=colors)
-    plt.grid()
-
-    print("\nApplication won't respond until you close the graph..")
-    plt.show()
-
-    go_back_to_graph_page()
 
 def search_customer_using_con_no():
     """ Function to search for customer details using Customer Conatact Number """
@@ -1179,10 +1169,57 @@ def reduce_from_due_amount():
         print("\nError: Invalid Input")
         reduce_from_due_amount()
 
+def most_visited_cus_sorting():
+    """ Function to find the most visited customer """
+    
+    latestBillID = get_latest_bill_id()
+    if latestBillID == 0:
+        print("\nError: No Bills Are Added Yet...")
+        go_back_to_bill_view() 
+    else:
+        DB_CURSOR.execute("SELECT cus_id,COUNT(cus_id) AS 'count' FROM billdateandcustomertracker GROUP BY cus_id ORDER BY count DESC LIMIT 5")
+        result = DB_CURSOR.fetchall()
+        
+        x_axis = []
+        y_axis = []
+        for cusId, count in result:
+            x_axis.append(f"{get_customer_details_from_cus_id(int(cusId), 1)[2]}({cusId})")
+            y_axis.append(int(count))
+
+        plot_bar_graph(
+            'Most Visited Customer (Top 5)',
+            'Customer Name (ID)',
+            'No. of Times Visited',
+            x_axis,
+            y_axis
+        )
+
+def plot_bar_graph(
+    graphTitle,
+    xAxisLable,
+    yAxisLable,
+    xAxisData,
+    yAxisData
+):
+    """ plotting the graph based on most visited customer, using `matplotlib` """
+
+    print('\nPlotting..')
+    colors = ['#3771EF','#DAB839','#DD602F','#CE2FDD','#2FDD8F']
+    plt.title(graphTitle, size='15', color='blue')
+    plt.xlabel(xAxisLable, color='green', size='12')
+    plt.ylabel(yAxisLable, color='green', size='12')
+    plt.bar(xAxisData, yAxisData, color=colors)
+    plt.grid()
+
+    print("\nApplication won't respond until you close the graph..")
+    plt.show()
+
+    go_back_to_graph_page()
+
 def graph_page():
     """ Serves as a Graph page """
 
-    print("\n---Graph Page---\n\n1. Price Details.\n2. Most Sold Products (Top 5)\n3. Go Back to Home Page.")
+    print("\n---Graph Page---\n\n1. Price Details.\n2. Most Sold Products (Top 5)\n3. Most Visited Customer (Top 5)\n4. Go Back to Home Page.")
     option = input('\nEnter a Valid Option : ')
 
     if option == '1':
@@ -1190,6 +1227,8 @@ def graph_page():
     elif option == '2':
         most_sold_product_sorting()
     elif option == '3':
+        most_visited_cus_sorting()
+    elif option == '4':
         home_page()
     else:
         print('\nError: Invalid Option')

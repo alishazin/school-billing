@@ -14,4 +14,4 @@ if new ph. no, then ask for the name and location(optional) to add to cusdetails
 ask for price paid after bill, so can add or minus from `remaining` column. TICK
 option to reduce from the `remaining` column manually. TICK
 specifying deleted product while plotting graph. TICK
-add most visited customer graph.
+add most visited customer graph. TICK
