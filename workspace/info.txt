@@ -15,3 +15,4 @@ ask for price paid after bill, so can add or minus from `remaining` column. TICK
 option to reduce from the `remaining` column manually. TICK
 specifying deleted product while plotting graph. TICK
 add most visited customer graph. TICK
+clean the code (remove all the unwanted print statements). TICK

@@ -4,7 +4,6 @@ import mysql.connector as conn
 import os
 import csv
 import pickle
-import datetime
 import time
 
 def log_in(username, password): 
@@ -14,8 +13,8 @@ def log_in(username, password):
     try:
         global DB_OBJECT
         DB_OBJECT = conn.connect(
-            username='root',
-            password='physicssucks'
+            username=username,
+            password=password
         )
 
     # if failed due to incorrect username or password, respond to the user with an error message
@@ -102,7 +101,6 @@ def check_if_new_user():
         DB_OBJECT.commit()
         create_readme_file()
         print('\nAssume that you are a new user, So lets start by adding a product.')
-        stop = time.time()
         enter_product_details()
     except Exception as error:
         print(error)
@@ -155,7 +153,6 @@ def enter_product_details():
                         break
 
     enter_product_details_into_database(product_name,product_unit,product_price,product_stock)
-    # print(product_name,product_unit,product_price, product_stock)
 
 def enter_to_price_tracker(id, price):
     DB_CURSOR.execute(f"SET @pro_price = {float(price)}")
