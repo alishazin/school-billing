@@ -107,6 +107,8 @@ def check_if_new_user():
         print('Unknown error')
 
 def create_readme_file():
+    """ Creating and writing to a .txt file about warning not to corrupt files """
+
     with open('README.txt','w') as file:
         file.write('Dont make any changes to the files in this directory. Renaming, replacing or deleting them can crash the application.')
 
@@ -155,6 +157,8 @@ def enter_product_details():
     enter_product_details_into_database(product_name,product_unit,product_price,product_stock)
 
 def enter_to_price_tracker(id, price):
+    """ Function to write to table `pricetracker` """
+
     DB_CURSOR.execute(f"SET @pro_price = {float(price)}")
     DB_CURSOR.execute(f"INSERT INTO pricetracker VALUES({id},@pro_price,current_date())")
 
@@ -291,6 +295,8 @@ def get_product_stock_from_id(id):
     return float(result[0][0])
 
 def delete_from_price_tracker(id):
+    """ Function to delete from table `pricetracker` """
+
     DB_CURSOR.execute(f"SET @id = {id}")
     DB_CURSOR.execute("DELETE FROM pricetracker WHERE product_id = @id")
 
@@ -327,6 +333,7 @@ def check_for_delete(id):
 
 def check_limit_remove():
     """ Checking whether the `productdetails` have more than one record. Raise an error if there is only one record. """
+    
     DB_CURSOR.execute('SELECT count(id) FROM productdetails')
     if list(DB_CURSOR.fetchall())[0][0] == 1:
         input('\nError: Minimum Number of Product allowed is 1, (Press Enter to continue) : ')
