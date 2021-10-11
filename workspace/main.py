@@ -6,6 +6,8 @@ import csv
 import pickle
 import time
 
+import db_connector
+
 def log_in(username, password): 
     """ Serves as a login interface. """
 
@@ -55,50 +57,10 @@ def check_if_new_user():
 
     # attempt failed as the database doesnt exist (as the user is a new one)
     except conn.errors.ProgrammingError:
-        with open('product_count.bin','wb') as file:
+        with open('cache/product_count.bin','wb') as file:
             pickle.dump(0, file)
             
-        DB_CURSOR.execute('CREATE DATABASE billing_software')
-        DB_CURSOR.execute('USE billing_software')
-        DB_CURSOR.execute("""CREATE TABLE productdetails (
-            id INT PRIMARY KEY,
-            name VARCHAR(30) UNIQUE NOT NULL,
-            unit VARCHAR(6) NOT NULL,
-            price float NOT NULL,
-            stock float NOT NULL,
-            CONSTRAINT check_unit CHECK (unit = 'packet' OR unit = 'kg')
-        )""")
-        DB_CURSOR.execute("""CREATE TABLE backupproductdetails (
-            id INT PRIMARY KEY,
-            name VARCHAR(30) NOT NULL,
-            unit VARCHAR(6) NOT NULL,
-            price float NOT NULL
-        )""")
-        DB_CURSOR.execute("""CREATE TABLE billdateandcustomertracker (
-            bill_id INT PRIMARY KEY,
-            date DATE NOT NULL,
-            cus_id INT NOT NULL
-        )""") 
-        DB_CURSOR.execute("""CREATE TABLE bill (
-            bill_id INT NOT NULL,
-            product_id INT NOT NULL,
-            quantity float NOT NULL,
-            price float NOT NULL,
-            FOREIGN KEY (bill_id) REFERENCES billdateandcustomertracker(bill_id)
-        )""")
-        DB_CURSOR.execute("""CREATE TABLE pricetracker (
-            product_id INT NOT NULL,
-            price float NOT NULL,
-            date DATE NOT NULL
-        )""")
-        DB_CURSOR.execute("""CREATE TABLE customerdetails (
-            cus_id INT AUTO_INCREMENT PRIMARY KEY,
-            contact_no VARCHAR(15) UNIQUE,
-            name VARCHAR(30) NOT NULL,
-            location VARCHAR(50) NULL,
-            remaining_money float NOT NULL DEFAULT '0'
-        )""")
-        DB_OBJECT.commit()
+        db_connector.initialize_database(DB_OBJECT, DB_CURSOR)
         create_readme_file()
         print('\nAssume that you are a new user, So lets start by adding a product.')
         enter_product_details()
@@ -109,7 +71,7 @@ def check_if_new_user():
 def create_readme_file():
     """ Creating and writing to a .txt file about warning not to corrupt files """
 
-    with open('README.txt','w') as file:
+    with open('cache/README.txt','w') as file:
         file.write('Dont make any changes to the files in this directory. Renaming, replacing or deleting them can crash the application.')
 
 def enter_product_details():
@@ -158,7 +120,7 @@ def enter_product_details():
 
 def enter_to_price_tracker(id, price):
     """ Function to write to table `pricetracker` """
-
+  
     DB_CURSOR.execute(f"SET @pro_price = {float(price)}")
     DB_CURSOR.execute(f"INSERT INTO pricetracker VALUES({id},@pro_price,current_date())")
 
@@ -188,7 +150,7 @@ def enter_product_details_into_database(name, unit, price, stock):
         print(f'\n{error_details}')
 
     else:
-        with open('product_count.bin','wb') as file:
+        with open('cache/product_count.bin','wb') as file:
             latestID = pickle.dump(int(latestID + 1), file)
 
         print(f"\nProduct '{name}' added successfully..")
@@ -203,7 +165,7 @@ def get_latest_id_in_table_productdetails():
     if len(result) == 0:
         pass
     else:
-        with open('product_count.bin','rb') as file:
+        with open('cache/product_count.bin','rb') as file:
             latestID = pickle.load(file)
     return latestID
 
@@ -236,7 +198,7 @@ def show_product_details_in_csv():
 
     # chance of error if the file `product_details.csv` is open
     try:
-        with open('product_details.csv','w') as file:
+        with open('cache/product_details.csv','w') as file:
             csv_writer = csv.writer(file)
             csv_writer.writerow(['ID','Product Name','Unit','Price','Stock'])
 
@@ -244,7 +206,7 @@ def show_product_details_in_csv():
                 csv_writer.writerow(i)
                 
         # opening `product_details.csv`
-        os.popen('product_details.csv')
+        os.popen('cache\\product_details.csv')
 
         home_page()
 
@@ -296,7 +258,7 @@ def get_product_stock_from_id(id):
 
 def delete_from_price_tracker(id):
     """ Function to delete from table `pricetracker` """
-
+    
     DB_CURSOR.execute(f"SET @id = {id}")
     DB_CURSOR.execute("DELETE FROM pricetracker WHERE product_id = @id")
 
@@ -333,7 +295,6 @@ def check_for_delete(id):
 
 def check_limit_remove():
     """ Checking whether the `productdetails` have more than one record. Raise an error if there is only one record. """
-    
     DB_CURSOR.execute('SELECT count(id) FROM productdetails')
     if list(DB_CURSOR.fetchall())[0][0] == 1:
         input('\nError: Minimum Number of Product allowed is 1, (Press Enter to continue) : ')
@@ -350,7 +311,7 @@ def show_backup_product_details_in_csv():
 
     # chance of error if the file `backup_product_details.csv` is open
     try:
-        with open('backup_product_details.csv','w') as file:
+        with open('cache/backup_product_details.csv','w') as file:
             csv_writer = csv.writer(file)
             csv_writer.writerow(['ID','Product Name','Unit','Price'])
 
@@ -358,7 +319,7 @@ def show_backup_product_details_in_csv():
                 csv_writer.writerow(i)
                 
         # opening `backup_product_details.csv`
-        os.popen('backup_product_details.csv')
+        os.popen('cache\\backup_product_details.csv')
 
         home_page()
     
@@ -384,7 +345,7 @@ def show_backup_product_details_in_terminal():
     go_back_to_home_page()
 
 def enter_cus_details():
-    """ User Interdace for entering customer details for the bill. If new customer, stored in a GLOBAL variable(dictionary). """
+    """ User Interface for entering customer details for the bill. If new customer, stored in a GLOBAL variable(dictionary). """
 
     while True:
         conNo = input("\nEnter the Contact Number of the Customer : ")
@@ -621,7 +582,7 @@ def add_bill_to_database(bill_dict):
     DB_OBJECT.commit()
 
     # Incrementing to the file `bill_count.bin`
-    with open('bill_count.bin','wb') as file:
+    with open('cache/bill_count.bin','wb') as file:
         pickle.dump(int(latestID + 1), file)
 
     generate_bill_with_price(billWithProductId, int(latestID + 1), 'new')
@@ -669,7 +630,7 @@ def create_bill_as_table(billList, billID, status):
                 DB_CURSOR.execute(f"UPDATE customerdetails SET remaining_money = '{moneyLeft}' WHERE contact_no = '{CUSTOMER_DETAILS['number']}'")
                 DB_OBJECT.commit()
                 break
-            elif check_if_money(moneyPaid) == False and moneyPaid >= 0:
+            elif check_if_money(moneyPaid) == False:
                 print("\nError: Invalid Input.")
                 continue
             else:
@@ -686,6 +647,9 @@ def create_bill_as_table(billList, billID, status):
 
 def check_if_money(number):
     """ Function return True if argument is a proper number. else return False """
+
+    if number.strip() == '':
+        return True
 
     try:
         float(number)
@@ -714,9 +678,9 @@ def show_bill_in_txt_file(billTable, billId, billTotal):
 
     # chance of error if the file `bill.txt` is open
     try:
-        with open('bill.txt','w') as file:
+        with open('cache/bill.txt','w') as file:
             file.write(f"Bill ID : {billId}\nDate : {get_date_from_bill_id(billId)}\nContact No : {CUSTOMER_DETAILS['number']}\nCustomer Name : {CUSTOMER_DETAILS['name']}\n\n{str(billTable)}\n\nTotal Cost ----------> {float(billTotal)}")
-        os.popen('bill.txt')
+        os.popen('cache\\bill.txt')
         print('\nBill Generated Successfully')
 
     except Exception as error:
@@ -758,7 +722,7 @@ def get_latest_bill_id():
     if len(DB_CURSOR.fetchall()) == 0:
         pass
     else:
-        with open('bill_count.bin','rb') as file:
+        with open('cache/bill_count.bin','rb') as file:
             latestID = pickle.load(file)
     return int(latestID)
 
