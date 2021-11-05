@@ -352,6 +352,9 @@ def enter_cus_details():
         if len(conNo) > 15:
             print('\nError: Contact Number should be less than 15')
             continue
+        elif conNo[0].strip() == '0': 
+            print("\nError: Contact Number Shouldn't Start With Zero")
+            continue
         elif conNo.isnumeric():
             if check_if_existing_customer(conNo):
                 conNo2, cusName, cusLoc, remainingMoney = get_customer_details_from_con_no(conNo)
@@ -1077,8 +1080,8 @@ def search_customer_using_name():
         likeOrExact = input("\nEnter 0 for EXACT search, Enter 1 for LIKE(starting with) search or Enter 2 for LIKE(anywhere in the name) search : ")
 
         if likeOrExact.strip() == '0':
-            DB_CURSOR.execute(f"SET @cus_name = '{name}'")
-            DB_CURSOR.execute("SELECT * FROM customerdetails WHERE BINARY(name) = @cus_name")
+            DB_CURSOR.execute(f"SET @cus_name = '{name.lower()}'")
+            DB_CURSOR.execute("SELECT * FROM customerdetails WHERE BINARY(LOWER(name)) = @cus_name")
             result = DB_CURSOR.fetchall()
             customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
             for i in result:
@@ -1087,7 +1090,7 @@ def search_customer_using_name():
             go_back_to_customer_view()
 
         elif likeOrExact.strip() == '1':
-            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE name LIKE '{name}%'")
+            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE LOWER(name) LIKE '{name.lower()}%'")
             result = DB_CURSOR.fetchall()
             customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
             for i in result:
@@ -1096,7 +1099,7 @@ def search_customer_using_name():
             go_back_to_customer_view()
 
         elif likeOrExact.strip() == '2':
-            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE name LIKE '%{name}%'")
+            DB_CURSOR.execute(f"SELECT * FROM customerdetails WHERE LOWER(name) LIKE '%{name.lower()}%'")
             result = DB_CURSOR.fetchall()
             customerTable = PrettyTable(['ID','Contact No','Name','Location', 'Remaining Amount'])
             for i in result:
