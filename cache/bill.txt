@@ -1,12 +1,12 @@
-Bill ID : 3
-Date : 2022-03-09
-Contact No : 2222222222
-Customer Name : customer two
+Bill ID : 4
+Date : 2022-03-24
+Contact No : 1111111111
+Customer Name : Customer One
 
 +------------+--------------+----------------+----------+-------+
 | Product ID | Product Name | Price Per Unit | Quantity | Total |
 +------------+--------------+----------------+----------+-------+
-|     3      |     lays     |      20.0      |   2.0    |  40.0 |
+|     1      |    pepsi     |     100.0      |   2.0    | 200.0 |
 +------------+--------------+----------------+----------+-------+
 
-Total Cost ----------> 40.0
+Total Cost ----------> 200.0
